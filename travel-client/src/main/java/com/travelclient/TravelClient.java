@@ -10,14 +10,14 @@ public class TravelClient {
         TravelServiceService service = new TravelServiceService();
         TravelService port = service.getTravelServicePort();
 
-//        boolean registerResult = port.register("user", "pass", "traveler");
-//        System.out.println("Register result: " + registerResult);
-//        // Gọi các phương thức Web Service
-//        String loginResult = port.login("user", "pass");
-//        System.out.println("Login result: " + loginResult);
+        boolean registerResult = port.register("user", "pass", "traveler");
+        System.out.println("Register result: " + registerResult);
+        // Gọi các phương thức Web Service
+        String loginResult = port.login("user", "pass");
+        System.out.println("Login result: " + loginResult);
 
-//        String searchResult = port.searchPlaces("beach");
-//        System.out.println("Search result: " + searchResult);
+        String searchResult = port.searchPlaces("beach");
+        System.out.println("Search result: " + searchResult);
 
         boolean addPlaceResult = port.addPlace("Beach Resort", "A beautiful beach", 1L);
         System.out.println("Add place result: " + addPlaceResult);
