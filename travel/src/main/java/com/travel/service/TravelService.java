@@ -10,12 +10,15 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @WebService
 public class TravelService {
     private final EntityManagerFactory emf;
-
+    private Map<String, Long> sessionTokens = new HashMap<>(); // Lưu token và user ID
+    private int tokenCounter = 0;
     public TravelService() {
         // Khởi tạo EntityManagerFactory cho Hibernate
         emf = Persistence.createEntityManagerFactory("travelPU"); // Thay "travelPU" bằng tên persistence unit trong persistence.xml
@@ -28,9 +31,14 @@ public class TravelService {
         try {
             Query query = em.createQuery("SELECT u FROM User u WHERE u.username = :username AND u.password = :password");
             query.setParameter("username", username);
-            query.setParameter("password", password); // Lưu ý: Trong thực tế, cần mã hóa password
+            query.setParameter("password", password); // Cần mã hóa password trong thực tế
             User user = (User) query.getSingleResult();
-            return user != null ? "success:" + user.getId() + ":" + user.getRole() : "failed";
+            if (user != null) {
+                String token = "token" + tokenCounter++; // Tạo token đơn giản
+                sessionTokens.put(token, user.getId());
+                return token + ":" + user.getRole(); // Trả về token và role
+            }
+            return "failed";
         } catch (Exception e) {
             return "failed";
         } finally {
@@ -46,7 +54,7 @@ public class TravelService {
             em.getTransaction().begin();
             User user = new User();
             user.setUsername(username);
-            user.setPassword(password); // Lưu ý: Cần mã hóa password trong thực tế
+            user.setPassword(password); // Cần mã hóa password
             user.setRole(role);
             em.persist(user);
             em.getTransaction().commit();
@@ -58,16 +66,29 @@ public class TravelService {
         }
     }
 
+    // Kiểm tra token và role trước khi thực hiện hành động
+    private boolean isAuthenticated(String token, String role) {
+        if (!sessionTokens.containsKey(token)) return false;
+        Long userId = sessionTokens.get(token);
+        EntityManager em = emf.createEntityManager();
+        try {
+            User user = em.find(User.class, userId);
+            return user != null && user.getRole().equals(role);
+        } finally {
+            em.close();
+        }
+    }
+
     // Thêm địa điểm (guide)
     @WebMethod
-    public boolean addPlace(String name, String description, Long guideId) {
+    public boolean addPlace(String token, String name, String description) {
+        if (!isAuthenticated(token, "guide")) return false;
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-            User guide = em.find(User.class, guideId);
-            if (guide == null || !guide.getRole().equals("guide")) {
-                return false;
-            }
+            Long userId = sessionTokens.get(token);
+            User guide = em.find(User.class, userId);
+            if (guide == null) return false;
             Place place = new Place();
             place.setName(name);
             place.setDescription(description);
@@ -84,10 +105,14 @@ public class TravelService {
 
     // Cập nhật địa điểm (guide)
     @WebMethod
-    public boolean updatePlace(Long placeId, String name, String description, Long guideId) {
+    public boolean updatePlace(String token , Long placeId, String name, String description, Long guideId) {
+        if (!isAuthenticated(token, "guide")) return false;
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
+            Long userId = sessionTokens.get(token);
+            User guide = em.find(User.class, userId);
+            if (guide == null) return false;
             Place place = em.find(Place.class, placeId);
             if (place == null || place.getGuide().getId() != guideId) {
                 return false;
@@ -106,10 +131,14 @@ public class TravelService {
 
     // Xóa địa điểm (guide)
     @WebMethod
-    public boolean deletePlace(Long placeId, Long guideId) {
+    public boolean deletePlace(Long placeId, Long guideId, String token) {
+        if (!isAuthenticated(token, "guide")) return false;
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
+            Long userId = sessionTokens.get(token);
+            if (userId == null) return false;
+            if (!userId.equals(guideId)) return false;
             Place place = em.find(Place.class, placeId);
             if (place == null || place.getGuide().getId() != guideId) {
                 return false;
@@ -126,10 +155,14 @@ public class TravelService {
 
     // Thêm hình ảnh (guide)
     @WebMethod
-    public boolean addImage(Long placeId, String url, String description, Long guideId) {
+    public boolean addImage(Long placeId, String url, String description, Long guideId, String token) {
+        if (!isAuthenticated(token, "guide")) return false;
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
+            Long userId = sessionTokens.get(token);
+            if (userId == null) return false;
+            if (!userId.equals(guideId)) return false;
             Place place = em.find(Place.class, placeId);
             if (place == null || place.getGuide().getId() != guideId) {
                 return false;
@@ -150,7 +183,8 @@ public class TravelService {
 
     // Tìm kiếm địa điểm (traveler)
     @WebMethod
-    public String searchPlaces(String keyword) {
+    public String searchPlaces(String token, String keyword) {
+        if (!isAuthenticated(token, "guide") && !isAuthenticated(token, "traveler")) return "failed";
         EntityManager em = emf.createEntityManager();
         try {
             Query query = em.createQuery("SELECT p FROM Place p WHERE p.name LIKE :keyword OR p.description LIKE :keyword");
@@ -160,7 +194,6 @@ public class TravelService {
             for (Place place : places) {
                 result.append("ID: ").append(place.getId())
                         .append(", Name: ").append(place.getName())
-                        .append(", Description: ").append(place.getDescription())
                         .append("\n");
             }
             return result.length() > 0 ? result.toString() : "No places found";
