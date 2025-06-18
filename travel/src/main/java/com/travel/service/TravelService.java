@@ -6,10 +6,7 @@ import com.travel.entity.User;
 
 import javax.jws.WebService;
 import javax.jws.WebMethod;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
+import javax.persistence.*;
 import java.util.List;
 
 @WebService
@@ -62,25 +59,36 @@ public class TravelService {
     @WebMethod
     public boolean addPlace(String name, String description, Long guideId) {
         EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = null;
         try {
-            em.getTransaction().begin();
+            tx = em.getTransaction();
+            tx.begin();
+
             User guide = em.find(User.class, guideId);
             if (guide == null || !guide.getRole().equals("guide")) {
+                tx.rollback();  // rollback if guide not found or not a guide
                 return false;
             }
+
             Place place = new Place();
             place.setName(name);
             place.setDescription(description);
             place.setGuide(guide);
+
             em.persist(place);
-            em.getTransaction().commit();
+            tx.commit(); // ✅ commit only if all succeeded
             return true;
         } catch (Exception e) {
+            if (tx != null && tx.isActive()) {
+                tx.rollback(); // ✅ rollback on any exception
+            }
+            e.printStackTrace(); // optional: log error
             return false;
         } finally {
-            em.close();
+            em.close(); // ✅ always close EntityManager
         }
     }
+
 
     // Cập nhật địa điểm (guide)
     @WebMethod
@@ -210,6 +218,101 @@ public class TravelService {
                 result.append("ID: ").append(image.getId())
                         .append(", URL: ").append(image.getUrl())
                         .append(", Description: ").append(image.getDescription())
+                        .append("\n");
+            }
+            return result.length() > 0 ? result.toString() : "No images found";
+        } catch (Exception e) {
+            return "Error retrieving images";
+        } finally {
+            em.close();
+        }
+    }
+    @WebMethod
+    public boolean deleteImage(Long imageId, Long guideId) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            Image image = em.find(Image.class, imageId);
+            if (image == null || image.getPlace().getGuide().getId() != guideId) {
+                return false;
+            }
+            em.remove(image);
+            em.getTransaction().commit();
+            return true;
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
+    // Update image (guide)
+    @WebMethod
+    public boolean updateImage(Long imageId, String url, String description, Long guideId) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            Image image = em.find(Image.class, imageId);
+            if (image == null || image.getPlace().getGuide().getId() != guideId) {
+                return false;
+            }
+            image.setUrl(url);
+            image.setDescription(description);
+            em.merge(image);
+            em.getTransaction().commit();
+            return true;
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
+    // Get places by guide (for dropdown population)
+    @WebMethod
+    public String getPlacesByGuide(Long guideId) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            Query query = em.createQuery("SELECT p FROM Place p WHERE p.guide.id = :guideId");
+            query.setParameter("guideId", guideId);
+            List<Place> places = query.getResultList();
+            StringBuilder result = new StringBuilder();
+            for (Place place : places) {
+                result.append("ID: ").append(place.getId())
+                        .append(", Name: ").append(place.getName())
+                        .append(", Description: ").append(place.getDescription())
+                        .append("\n");
+            }
+            return result.length() > 0 ? result.toString() : "No places found";
+        } catch (Exception e) {
+            return "Error retrieving places";
+        } finally {
+            em.close();
+        }
+    }
+
+    // Get images by place with more details
+    @WebMethod
+    public String getImagesByPlaceDetailed(Long placeId, Long guideId) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            // First check if the place belongs to the guide
+            Place place = em.find(Place.class, placeId);
+            if (place == null || place.getGuide().getId() != guideId) {
+                return "Access denied";
+            }
+
+            Query query = em.createQuery("SELECT i FROM Image i WHERE i.place.id = :placeId ORDER BY i.id DESC");
+            query.setParameter("placeId", placeId);
+            List<Image> images = query.getResultList();
+            StringBuilder result = new StringBuilder();
+            for (Image image : images) {
+                result.append("ID: ").append(image.getId())
+                        .append(", URL: ").append(image.getUrl())
+                        .append(", Description: ").append(image.getDescription())
+                        .append(", PlaceID: ").append(image.getPlace().getId())
                         .append("\n");
             }
             return result.length() > 0 ? result.toString() : "No images found";
