@@ -214,7 +214,7 @@
 </header>
 
 <!-- Main Content -->
-<main class="flex items-center justify-center flex-grow">
+<main class="flex items-center justify-center flex-grow pt-28">
     <div class="w-full max-w-8xl">
         <div class="glass-card fade-in">
             <h2 class="text-5xl font-extrabold text-center mb-8">Welcome to Travel App</h2>
@@ -227,6 +227,12 @@
                 <% if ("guide".equals(role)) { %>
                 <a href="addPlace.jsp" class="btn w-full md:w-auto bg-green-600 text-white text-center py-3 px-8 rounded-lg font-semibold hover:bg-green-700 action-btn">
                     <i class="fas fa-plus mr-2"></i> Add Place
+                </a>
+                <a href="updatePlace.jsp" class="btn w-full md:w-auto bg-yellow-500 text-white text-center py-3 px-8 rounded-lg font-semibold hover:bg-yellow-600 action-btn">
+                    <i class="fas fa-edit mr-2"></i> Update Place
+                </a>
+                <a href="deletePlace.jsp" class="btn w-full md:w-auto bg-red-600 text-white text-center py-3 px-8 rounded-lg font-semibold hover:bg-red-700 action-btn">
+                    <i class="fas fa-trash mr-2"></i> Delete Place
                 </a>
                 <% } else if ("traveler".equals(role)) { %>
                 <a href="search.jsp" class="btn w-full md:w-auto bg-blue-600 text-white text-center py-3 px-8 rounded-lg font-semibold hover:bg-blue-700 action-btn">
