@@ -209,7 +209,7 @@
 </header>
 
 <!-- Main Content -->
-<main class="flex items-center justify-center flex-grow">
+<main class="flex items-center justify-center flex-grow pt-28">
   <div class="w-full max-w-8xl">
     <div class="glass-card fade-in">
       <h2 class="text-5xl font-extrabold text-center mb-8">Welcome to Travel App</h2>
