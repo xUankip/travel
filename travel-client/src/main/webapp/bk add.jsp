@@ -59,13 +59,13 @@
           } else if (request.getMethod().equalsIgnoreCase("POST")) {
             String name = request.getParameter("name");
             String description = request.getParameter("description");
-            String imageData = request.getParameter("imageData"); // Base64 data
+            String imageUrl = request.getParameter("imageUrl");
             try {
               URL wsdlURL = new URL("http://localhost:8080/travel?wsdl");
               QName qName = new QName("http://service.travel.com/", "TravelServiceService");
               Service service = Service.create(wsdlURL, qName);
               TravelService travelService = service.getPort(TravelService.class);
-              boolean success = travelService.addPlace(token, name, description, imageData);
+              boolean success = travelService.addPlace(token, name, description, imageUrl);
               message = success ? "Thêm địa điểm thành công!" : "Thêm địa điểm thất bại.";
             } catch (Exception e) {
               message = "Lỗi: " + e.getMessage();
@@ -76,7 +76,7 @@
         <% if (message != null) { %>
         <p class="text-center mb-6 font-medium <%= message.startsWith("Thêm địa điểm thành công") ? "text-green-500" : "text-red-500" %>"><%= message %></p>
         <% } %>
-        <form id="addPlaceForm" action="addPlace.jsp" method="post" class="space-y-6">
+        <form action="addPlace.jsp" method="post" class="space-y-6">
           <!-- Name Field -->
           <div>
             <label for="name" class="block text-gray-700 font-medium mb-1">Tên địa điểm</label>
@@ -105,21 +105,10 @@
             <input
                     type="url"
                     id="imageUrl"
+                    name="imageUrl"
                     class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg"
-                    oninput="previewImageFromUrl(this.value)"
+                    oninput="previewImage(this.value)"
             />
-          </div>
-          <!-- Image File Field -->
-          <div>
-            <label for="imageFile" class="block text-gray-700 font-medium mb-1">Chọn ảnh từ máy (tùy chọn)</label>
-            <input
-                    type="file"
-                    id="imageFile"
-                    accept="image/*"
-                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg"
-                    onchange="previewImageFromFile(this)"
-            />
-            <input type="hidden" id="imageData" name="imageData" />
             <p id="errorMessage" class="error-message hidden"></p>
             <img id="imagePreview" class="preview-img hidden" alt="Image Preview" />
           </div>
@@ -141,71 +130,30 @@
   </div>
 </div>
 <script>
-  function previewImageFromUrl(url) {
+  function previewImage(url) {
     const img = document.getElementById('imagePreview');
     const errorMessage = document.getElementById('errorMessage');
-    const imageDataInput = document.getElementById('imageData');
-    const imageFileInput = document.getElementById('imageFile');
 
+    // Reset state
     img.classList.add('hidden');
     errorMessage.classList.add('hidden');
     errorMessage.textContent = '';
-    imageDataInput.value = '';
-    imageFileInput.value = '';
 
-    if (!url) return;
+    if (!url) {
+      return;
+    }
 
+    // Create a new image to test loading
     const testImg = new Image();
     testImg.onload = function() {
       img.src = url;
       img.classList.remove('hidden');
-      imageDataInput.value = url;
     };
     testImg.onerror = function() {
-      errorMessage.textContent = 'Không thể tải ảnh từ URL. Vui lòng kiểm tra lại.';
+      errorMessage.textContent = 'Không thể tải ảnh. Vui lòng kiểm tra URL.';
       errorMessage.classList.remove('hidden');
     };
     testImg.src = url;
-  }
-
-  function previewImageFromFile(input) {
-    const img = document.getElementById('imagePreview');
-    const errorMessage = document.getElementById('errorMessage');
-    const imageDataInput = document.getElementById('imageData');
-    const imageUrlInput = document.getElementById('imageUrl');
-
-    img.classList.add('hidden');
-    errorMessage.classList.add('hidden');
-    errorMessage.textContent = '';
-    imageDataInput.value = '';
-    imageUrlInput.value = '';
-
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      if (!file.type.startsWith('image/')) {
-        errorMessage.textContent = 'Vui lòng chọn một file ảnh hợp lệ.';
-        errorMessage.classList.remove('hidden');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) { // Giới hạn 5MB
-        errorMessage.textContent = 'File ảnh quá lớn. Vui lòng chọn file dưới 5MB.';
-        errorMessage.classList.remove('hidden');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        console.log('Base64 length:', e.target.result.length); // Debug
-        img.src = e.target.result;
-        img.classList.remove('hidden');
-        imageDataInput.value = e.target.result; // Gửi base64
-      };
-      reader.onerror = function() {
-        errorMessage.textContent = 'Không thể đọc file ảnh.';
-        errorMessage.classList.remove('hidden');
-      };
-      reader.readAsDataURL(file);
-    }
   }
 </script>
 </body>

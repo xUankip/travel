@@ -18,10 +18,13 @@ public class Image {
 
     @ManyToOne
     @JoinColumn(name = "place_id", referencedColumnName = "id")
-    private Place place; // Thay placeId bằng mối quan hệ với Place
+    private Place place;
 
     @Column(name = "url")
     private String url;
+
+    @Column(name = "image_data", columnDefinition = "LONGTEXT")
+    private String imageData;
 
     @Column(name = "description")
     private String description;
@@ -29,10 +32,11 @@ public class Image {
     public Image() {
     }
 
-    public Image(Long id, Place place, String url, String description) {
+    public Image(Long id, Place place, String url, String imageData, String description) {
         this.id = id;
         this.place = place;
         this.url = url;
+        this.imageData = imageData;
         this.description = description;
     }
 }
