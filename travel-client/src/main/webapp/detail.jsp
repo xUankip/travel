@@ -1,4 +1,3 @@
-```jsp
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.travelclient.generated.TravelService" %>
 <%@ page import="javax.xml.namespace.QName" %>
@@ -193,7 +192,7 @@
           String[] details = placeDetails.split(",");
           for (String detail : details) {
             if (detail.startsWith("name:")) {
-              placeName = detail.split("name:")[1];
+              placeName = detail.split("name:")[1]; //init
             } else if (detail.startsWith("description:")) {
               placeDescription = detail.split("description:")[1];
             } else if (detail.startsWith("guide:")) {
