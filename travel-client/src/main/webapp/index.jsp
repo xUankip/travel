@@ -184,15 +184,10 @@
 </head>
 <body class="font-sans flex flex-col min-h-screen">
 <!-- Header -->
-<header class="glass-header">
+<header class="">
     <div class="max-w-6xl mx-auto flex justify-between items-center">
         <div class="flex items-center space-x-4">
             <h1 class="text-3xl font-bold text-white">Travel App</h1>
-            <%
-                SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a 'GMT'Z, EEEE, MMMM dd, yyyy");
-                String currentDateTime = sdf.format(new Date());
-            %>
-            <span class="text-sm text-gray-300"><%= currentDateTime %></span>
         </div>
         <nav>
             <%

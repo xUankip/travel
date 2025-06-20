@@ -164,7 +164,6 @@
     <p class="text-gray-400 italic">No image available.</p>
     <% } %>
   </div>
-
   <!-- Guide Edit Form -->
   <% if ("guide".equals(role)) { %>
   <form method="post" class="space-y-4">
@@ -191,7 +190,24 @@
   </form>
 </div>
 <% } %>
-
+<!-- đây là prod cũ
+        // Get place details
+        String placeDetails = travelService.getPlaceDetails(placeId);
+        if (placeDetails != null && !placeDetails.startsWith("error")) {
+          String[] details = placeDetails.split(",");
+          for (String detail : details) {
+            if (detail.startsWith("name:")) {
+              placeName = detail.split("name:")[1]; //init
+            } else if (detail.startsWith("description:")) {
+              placeDescription = detail.split("description:")[1];
+            } else if (detail.startsWith("guide:")) {
+              guideName = detail.split("guide:")[1];
+            }
+          }
+        } else {
+          out.println("<p class='text-red-300 text-center'>Error: " + (placeDetails != null ? placeDetails : "Unable to fetch data") + "</p>");
+        }
+ -->
 <!-- Comments Table -->
 <div class="mt-10">
   <h2 class="text-xl font-bold mb-3">Comments</h2>
