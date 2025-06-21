@@ -159,20 +159,46 @@ public class TravelService {
     @WebMethod
     public boolean deletePlace(Long placeId, Long guideId, String token) {
         if (!isAuthenticated(token, "guide")) return false;
+
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
+
+            // Get the current user ID from token
             Long userId = sessionTokens.get(token);
             if (userId == null) return false;
-            if (!userId.equals(guideId)) return false;
+
+            // Find the place to delete
             Place place = em.find(Place.class, placeId);
-            if (place == null || place.getGuide().getId() != guideId) {
+            if (place == null) {
+                em.getTransaction().rollback();
                 return false;
             }
+
+            // Check if the current user is the guide who owns this place
+            if (place.getGuide() == null || !place.getGuide().getId().equals(userId)) {
+                em.getTransaction().rollback();
+                return false;
+            }
+
+            // Delete associated ratings first (to avoid foreign key constraint issues)
+            Query deleteRatings = em.createQuery("DELETE FROM Ratings r WHERE r.place.id = :placeId");
+            deleteRatings.setParameter("placeId", placeId);
+            deleteRatings.executeUpdate();
+
+            // Delete associated images
+            Query deleteImages = em.createQuery("DELETE FROM Image i WHERE i.place.id = :placeId");
+            deleteImages.setParameter("placeId", placeId);
+            deleteImages.executeUpdate();
+
+            // Now delete the place
             em.remove(place);
             em.getTransaction().commit();
             return true;
+
         } catch (Exception e) {
+            System.out.println("Error deleting place: " + e.getMessage());
+            e.printStackTrace();
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
