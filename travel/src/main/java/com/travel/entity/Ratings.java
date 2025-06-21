@@ -1,14 +1,22 @@
 package com.travel.entity;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @Entity
 @Data
+@NoArgsConstructor
+@Table(name = "ratings", indexes = {
+        @Index(name = "idx_place_id", columnList = "place_id"),
+        @Index(name = "idx_traveler_id", columnList = "traveler_id")
+})
 @XmlRootElement
-@Table(name = "ratings")
 public class Ratings {
 
     @Id
@@ -16,25 +24,24 @@ public class Ratings {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "place_id", referencedColumnName = "id")
-    private Place place; // Thay placeId bằng mối quan hệ với Place
+    private Place place;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "traveler_id", referencedColumnName = "id")
-    private User traveler; // Thay travelerId bằng mối quan hệ với User
+    private User traveler;
 
     @Column(name = "rating")
+    @Min(1)
+    @Max(5)
     private int rating;
 
     @Column(name = "comment")
+    @NotNull
     private String comment;
 
-    public Ratings() {
-    }
-
-    public Ratings(Long id, Place place, User traveler, int rating, String comment) {
-        this.id = id;
+    public Ratings(Place place, User traveler, int rating, String comment) {
         this.place = place;
         this.traveler = traveler;
         this.rating = rating;
