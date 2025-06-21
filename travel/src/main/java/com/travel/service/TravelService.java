@@ -217,22 +217,30 @@ public class TravelService {
         if (!isAuthenticated(token, "guide") && !isAuthenticated(token, "traveler")) {
             EntityManager em = emf.createEntityManager();
             try {
-                Query query = em.createQuery("SELECT p FROM Place p WHERE p.name LIKE :keyword OR p.description LIKE :keyword ORDER BY p.id DESC", Place.class);
-                query.setParameter("keyword", "%" + keyword + "%");
+                Query query = em.createQuery(
+                        "SELECT p FROM Place p WHERE LOWER(p.name) LIKE :keyword OR LOWER(p.description) LIKE :keyword ORDER BY p.id DESC",
+                        Place.class
+                );
+                query.setParameter("keyword", "%" + keyword.toLowerCase() + "%");
                 return query.getResultList();
             } finally {
                 em.close();
             }
         }
+
         EntityManager em = emf.createEntityManager();
         try {
-            Query query = em.createQuery("SELECT p FROM Place p WHERE (p.name LIKE :keyword OR p.description LIKE :keyword) ORDER BY p.id DESC", Place.class);
-            query.setParameter("keyword", "%" + keyword + "%");
+            Query query = em.createQuery(
+                    "SELECT p FROM Place p WHERE LOWER(p.name) LIKE :keyword OR LOWER(p.description) LIKE :keyword ORDER BY p.id DESC",
+                    Place.class
+            );
+            query.setParameter("keyword", "%" + keyword.toLowerCase() + "%");
             return query.getResultList();
         } finally {
             em.close();
         }
     }
+
 
     @WebMethod
     public boolean ratePlace(Long placeId, Long travelerId, int rating, String comment) {
